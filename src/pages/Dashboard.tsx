@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { UploadForm } from '../components/dashboard/UploadForm'
 import { MyUploads } from '../components/dashboard/MyUploads'
+import { UserStats } from '../components/dashboard/UserStats'
 import { getUserImages } from '../lib/supabaseQueries'
 import { useAuth } from '../hooks/useAuth'
 import { Image } from '../types'
@@ -32,23 +33,24 @@ export const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-[#0F1419]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Dashboard</h1>
-          <p className="text-gray-400">Manage your car image uploads</p>
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            <UploadForm onUploadSuccess={loadUserImages} />
 
-        <div className="space-y-8">
-          <UploadForm onUploadSuccess={loadUserImages} />
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-12 h-12 text-[#00D9FF] animate-spin" />
+              </div>
+            ) : (
+              <MyUploads images={images} onDelete={loadUserImages} />
+            )}
+          </div>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-12 h-12 text-indigo-500 animate-spin" />
-            </div>
-          ) : (
-            <MyUploads images={images} onDelete={loadUserImages} />
-          )}
+          <div className="lg:col-span-1">
+            <UserStats />
+          </div>
         </div>
       </div>
     </div>

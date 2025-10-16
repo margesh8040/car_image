@@ -31,7 +31,7 @@ export const MyUploads = ({ images, onDelete }: MyUploadsProps) => {
 
   if (images.length === 0) {
     return (
-      <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-12">
+      <div className="bg-[#1A212B] rounded-2xl p-12">
         <div className="text-center">
           <p className="text-gray-400 text-lg">You haven't uploaded any images yet.</p>
           <p className="text-gray-500 text-sm mt-2">Upload your first car image to get started!</p>
@@ -41,20 +41,20 @@ export const MyUploads = ({ images, onDelete }: MyUploadsProps) => {
   }
 
   return (
-    <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6">
+    <div className="bg-[#1A212B] rounded-2xl p-6">
       <h2 className="text-2xl font-bold text-white mb-6">My Uploads</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {images.map((image) => (
           <div
             key={image.id}
-            className="group bg-[#0a0a0a] border border-gray-800 rounded-xl overflow-hidden hover:border-gray-700 transition-colors"
+            className="group bg-[#0F1419] rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300"
           >
             <div className="relative aspect-video overflow-hidden bg-gray-900">
               <img
                 src={image.storage_url}
                 alt={image.image_name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
             </div>
 
@@ -65,19 +65,19 @@ export const MyUploads = ({ images, onDelete }: MyUploadsProps) => {
               )}
 
               <div className="flex items-center gap-2 mb-3">
-                <span className="px-2 py-1 bg-indigo-500/20 text-indigo-400 text-xs font-medium rounded">
+                <span className="px-2 py-1 bg-[#FF6B35]/20 text-[#FF6B35] text-xs font-medium rounded">
                   {image.category}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-gray-800">
+              <div className="flex items-center justify-between pt-3 border-t border-gray-700">
                 <div className="flex items-center gap-3 text-sm text-gray-400">
                   <div className="flex items-center gap-1">
-                    <Heart className="w-4 h-4" />
+                    <Heart className="w-4 h-4 text-red-500" />
                     <span>{image.like_count}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Download className="w-4 h-4" />
+                    <Download className="w-4 h-4 text-[#00D9FF]" />
                     <span>{image.download_count}</span>
                   </div>
                 </div>

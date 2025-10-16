@@ -100,7 +100,7 @@ export const uploadImage = async (
   const fileExt = file.name.split('.').pop()
   const fileName = `${userId}/${Date.now()}.${fileExt}`
 
-  const { data: storageData, error: storageError } = await supabase.storage
+  const { error: storageError } = await supabase.storage
     .from('car-images')
     .upload(fileName, file, {
       cacheControl: '3600',

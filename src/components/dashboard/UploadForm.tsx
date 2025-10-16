@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Upload, X, AlertCircle } from 'lucide-react'
+import { useState, useRef, DragEvent } from 'react'
+import { Cloud, X, AlertCircle, Loader2, Check } from 'lucide-react'
 import { uploadImage } from '../../lib/supabaseQueries'
 import { useAuth } from '../../hooks/useAuth'
 import { CAR_CATEGORIES, CarCategory } from '../../types'
@@ -19,21 +19,22 @@ export const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
     hashtags: '',
   })
   const [loading, setLoading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [isDragOver, setIsDragOver] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0]
-    if (!selectedFile) return
-
+  const validateAndSetFile = (selectedFile: File) => {
     if (selectedFile.size > 5 * 1024 * 1024) {
       setError('File size must be less than 5MB')
-      return
+      return false
     }
 
-    if (!selectedFile.type.startsWith('image/')) {
-      setError('Please select an image file')
-      return
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    if (!validTypes.includes(selectedFile.type)) {
+      setError('Please select a valid image file (.jpg, .png, .webp)')
+      return false
     }
 
     setFile(selectedFile)
@@ -44,6 +45,41 @@ export const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
       setPreview(reader.result as string)
     }
     reader.readAsDataURL(selectedFile)
+    return true
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0]
+    if (selectedFile) {
+      validateAndSetFile(selectedFile)
+    }
+  }
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(true)
+  }
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+  }
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+
+    const droppedFile = e.dataTransfer.files[0]
+    if (droppedFile) {
+      validateAndSetFile(droppedFile)
+    }
+  }
+
+  const handleClick = () => {
+    fileInputRef.current?.click()
   }
 
   const handleRemoveFile = () => {
@@ -74,12 +110,23 @@ export const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
 
     setLoading(true)
     setError('')
+    setUploadProgress(0)
 
     try {
       const hashtags = formData.hashtags
         .split(',')
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0)
+
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval)
+            return 90
+          }
+          return prev + 10
+        })
+      }, 200)
 
       await uploadImage(user.id, file, {
         image_name: formData.image_name,
@@ -88,17 +135,20 @@ export const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
         hashtags: hashtags.length > 0 ? hashtags : undefined,
       })
 
+      clearInterval(progressInterval)
+      setUploadProgress(100)
       setSuccess(true)
-      setFile(null)
-      setPreview(null)
-      setFormData({
-        image_name: '',
-        description: '',
-        category: '',
-        hashtags: '',
-      })
 
       setTimeout(() => {
+        setFile(null)
+        setPreview(null)
+        setFormData({
+          image_name: '',
+          description: '',
+          category: '',
+          hashtags: '',
+        })
+        setUploadProgress(0)
         setSuccess(false)
         onUploadSuccess()
       }, 2000)
@@ -110,130 +160,168 @@ export const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
   }
 
   return (
-    <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6">
-      <h2 className="text-2xl font-bold text-white mb-6">Upload New Image</h2>
+    <div className="bg-[#1A212B] rounded-2xl p-6 animate-fade-in">
+      <h2 className="text-3xl font-bold text-white mb-2">Upload Car Images</h2>
+      <p className="text-gray-400 text-base mb-8">Share your collection with the community</p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
-          <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-            <p className="text-red-400 text-sm">{error}</p>
+          <div className="bg-red-500/10 border border-red-500 rounded-lg p-3 animate-shake">
+            <p className="text-red-500 text-xs flex items-center gap-2">
+              <AlertCircle size={16} />
+              {error}
+            </p>
           </div>
         )}
 
         {success && (
-          <div className="bg-green-500/10 border border-green-500/50 rounded-lg p-4">
-            <p className="text-green-400 text-sm">Image uploaded successfully!</p>
+          <div className="bg-green-500/10 border border-green-500 rounded-lg p-3 animate-fade-in">
+            <p className="text-green-500 text-xs flex items-center gap-2">
+              <Check size={16} />
+              Image uploaded successfully!
+            </p>
           </div>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Image File</label>
-          {!preview ? (
-            <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-700 rounded-lg cursor-pointer hover:border-indigo-500 transition-colors bg-[#0a0a0a]">
-              <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                <Upload className="w-12 h-12 text-gray-400 mb-3" />
-                <p className="mb-2 text-sm text-gray-400">
-                  <span className="font-semibold">Click to upload</span> or drag and drop
-                </p>
-                <p className="text-xs text-gray-500">PNG, JPG, JPEG (MAX. 5MB)</p>
-              </div>
-              <input
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handleFileChange}
+        {!preview ? (
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={handleClick}
+            className={`min-h-[240px] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
+              isDragOver
+                ? 'border-[#00D9FF] bg-[#1A212B] border-solid'
+                : 'border-[#00D9FF] bg-[#1A212B]/50 hover:bg-[#1A212B] hover:border-solid'
+            }`}
+          >
+            <Cloud className="w-16 h-16 text-[#00D9FF] mb-4 animate-bounce" />
+            <p className="text-lg text-gray-300 mb-1">Drag & drop images</p>
+            <p className="text-lg text-gray-400 mb-4">or click to browse</p>
+            <p className="text-sm text-gray-500">.jpg, .png, .webp</p>
+            <p className="text-sm text-gray-500">Max 5MB</p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              onChange={handleFileChange}
+            />
+          </div>
+        ) : (
+          <div className="space-y-6 animate-fade-in">
+            <div className="relative inline-block">
+              <img
+                src={preview}
+                alt="Preview"
+                className="w-32 h-32 object-cover rounded-xl"
               />
-            </label>
-          ) : (
-            <div className="relative">
-              <img src={preview} alt="Preview" className="w-full h-64 object-cover rounded-lg" />
               <button
                 type="button"
                 onClick={handleRemoveFile}
-                className="absolute top-2 right-2 p-2 bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+                className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 rounded-full hover:bg-red-600 transition-colors flex items-center justify-center"
               >
-                <X className="w-5 h-5 text-white" />
+                <X size={16} className="text-white" />
               </button>
             </div>
-          )}
-        </div>
 
-        <div>
-          <label htmlFor="image_name" className="block text-sm font-medium text-gray-300 mb-2">
-            Image Name *
-          </label>
-          <input
-            type="text"
-            id="image_name"
-            name="image_name"
-            value={formData.image_name}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-3 bg-[#0a0a0a] border border-gray-700 rounded-lg focus:outline-none focus:border-indigo-500 text-white transition-colors"
-            placeholder="e.g., Red Ferrari 458"
-          />
-        </div>
+            <div>
+              <label htmlFor="image_name" className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">
+                Image Name *
+              </label>
+              <input
+                type="text"
+                id="image_name"
+                name="image_name"
+                value={formData.image_name}
+                onChange={handleChange}
+                required
+                className="w-full h-12 px-4 bg-[#0F1419] border border-gray-700 rounded-lg focus:outline-none focus:border-[#00D9FF] focus:shadow-[0_0_12px_rgba(0,217,255,0.3)] text-white transition-all duration-300"
+                placeholder="Enter image title"
+              />
+            </div>
 
-        <div>
-          <label htmlFor="category" className="block text-sm font-medium text-gray-300 mb-2">
-            Category *
-          </label>
-          <select
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-3 bg-[#0a0a0a] border border-gray-700 rounded-lg focus:outline-none focus:border-indigo-500 text-white transition-colors"
-          >
-            <option value="">Select a category</option>
-            {CAR_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-        </div>
+            <div>
+              <label htmlFor="category" className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">
+                Category *
+              </label>
+              <select
+                id="category"
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                required
+                className="w-full h-12 px-4 bg-[#0F1419] border border-gray-700 rounded-lg focus:outline-none focus:border-[#00D9FF] focus:shadow-[0_0_12px_rgba(0,217,255,0.3)] text-white transition-all duration-300 cursor-pointer"
+              >
+                <option value="">Select a category</option>
+                {CAR_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-2">
-            Description
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows={3}
-            className="w-full px-4 py-3 bg-[#0a0a0a] border border-gray-700 rounded-lg focus:outline-none focus:border-indigo-500 text-white transition-colors resize-none"
-            placeholder="Tell us about this car..."
-          />
-        </div>
+            <div>
+              <label htmlFor="description" className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">
+                Description
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={3}
+                className="w-full px-4 py-3 bg-[#0F1419] border border-gray-700 rounded-lg focus:outline-none focus:border-[#00D9FF] focus:shadow-[0_0_12px_rgba(0,217,255,0.3)] text-white transition-all duration-300 resize-none"
+                placeholder="Tell us about this car..."
+              />
+            </div>
 
-        <div>
-          <label htmlFor="hashtags" className="block text-sm font-medium text-gray-300 mb-2">
-            Hashtags
-          </label>
-          <input
-            type="text"
-            id="hashtags"
-            name="hashtags"
-            value={formData.hashtags}
-            onChange={handleChange}
-            className="w-full px-4 py-3 bg-[#0a0a0a] border border-gray-700 rounded-lg focus:outline-none focus:border-indigo-500 text-white transition-colors"
-            placeholder="ferrari, red, supercar (comma separated)"
-          />
-        </div>
+            <div>
+              <label htmlFor="hashtags" className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">
+                Hashtags
+              </label>
+              <input
+                type="text"
+                id="hashtags"
+                name="hashtags"
+                value={formData.hashtags}
+                onChange={handleChange}
+                className="w-full h-12 px-4 bg-[#0F1419] border border-gray-700 rounded-lg focus:outline-none focus:border-[#00D9FF] focus:shadow-[0_0_12px_rgba(0,217,255,0.3)] text-white transition-all duration-300"
+                placeholder="ferrari, red, supercar (comma separated)"
+              />
+            </div>
 
-        <button
-          type="submit"
-          disabled={loading || !file}
-          className="w-full py-3 bg-gradient-to-r from-indigo-500 to-pink-500 text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          <Upload className="w-5 h-5" />
-          {loading ? 'Uploading...' : 'Upload Image'}
-        </button>
+            <button
+              type="submit"
+              disabled={loading || !file}
+              className="w-full h-12 bg-[#FF6B35] text-white rounded-lg font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                'Upload Image'
+              )}
+            </button>
+
+            {loading && (
+              <div className="space-y-2">
+                <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${
+                      uploadProgress === 100 ? 'bg-green-500' : 'bg-[#00D9FF]'
+                    }`}
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+                <p className="text-sm text-gray-400 text-center">{uploadProgress}%</p>
+              </div>
+            )}
+          </div>
+        )}
       </form>
     </div>
   )

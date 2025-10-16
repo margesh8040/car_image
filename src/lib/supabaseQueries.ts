@@ -117,6 +117,7 @@ export const uploadImage = async (
     .from('images')
     .insert({
       user_id: userId,
+      storage_path: fileName,
       storage_url: publicUrl,
       ...metadata,
     })

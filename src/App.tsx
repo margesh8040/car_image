@@ -9,7 +9,7 @@ import { SignInPage } from './pages/SignInPage'
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-[#0a0a0a]">
+      <div className="min-h-screen bg-[var(--color-bg)]">
         <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />

@@ -1,14 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --color-primary: #0F1419;
+    --color-primary-light: #1A212B;
+    --color-accent: #FF6B35;
+    --color-highlight: #00D9FF;
+    --color-bg: #121820;
+    --color-text: #E8EAED;
+    --color-text-secondary: #8A8D93;
+    --color-success: #10B981;
+    --color-danger: #EF4444;
+
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-2xl: 48px;
+
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+
+    --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
   * {
     @apply scroll-smooth;
   }
 
   body {
     @apply antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--color-bg)];
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply bg-[var(--color-accent)] text-white hover:bg-[#FF7F52] focus:ring-[var(--color-accent)];
+    @apply shadow-lg shadow-[var(--color-accent)]/20 hover:shadow-xl hover:shadow-[var(--color-accent)]/30;
+    @apply hover:-translate-y-0.5;
+  }
+
+  .btn-secondary {
+    @apply border-2 border-[var(--color-text-secondary)] text-[var(--color-text)] hover:border-[var(--color-text)];
+    @apply hover:bg-[var(--color-primary-light)] focus:ring-[var(--color-highlight)];
+  }
+
+  .btn-ghost {
+    @apply text-[var(--color-text)] hover:bg-[var(--color-primary-light)] focus:ring-[var(--color-highlight)];
+  }
+
+  .btn-icon {
+    @apply p-3 rounded-xl hover:bg-[var(--color-primary-light)] transition-all duration-300;
+    @apply focus:outline-none focus:ring-2 focus:ring-[var(--color-highlight)] focus:ring-offset-2 focus:ring-offset-[var(--color-bg)];
   }
 }
 
@@ -18,5 +81,25 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  .text-display {
+    @apply text-[56px] font-bold leading-tight;
+  }
+
+  .text-h1 {
+    @apply text-[32px] font-bold leading-tight;
+  }
+
+  .text-h2 {
+    @apply text-[24px] font-semibold leading-tight;
+  }
+
+  .text-body {
+    @apply text-[18px] leading-relaxed;
+  }
+
+  .text-small {
+    @apply text-[14px] leading-normal;
   }
 }

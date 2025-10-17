@@ -61,19 +61,8 @@ export const getProfile = async (userId: string) => {
   return data
 }
 
-export const getAllImages = async () => {
-  const { data, error } = await supabase
-    .from('images')
-    .select(`
-      *,
-      profiles:user_id (
-        username
-      )
-    `)
-    .order('created_at', { ascending: false })
-
-  if (error) throw error
-  return data
+export const getAllImages = async (userId?: string | null) => {
+  return getImagesWithLikeStatus(userId ?? null)
 }
 
 export const getUserImages = async (userId: string) => {
@@ -154,33 +143,113 @@ export const incrementDownloadCount = async (imageId: string) => {
   if (error) throw error
 }
 
-export const toggleLike = async (userId: string, imageId: string) => {
-  const { data: existingLike } = await supabase
-    .from('likes')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('image_id', imageId)
-    .maybeSingle()
-
-  if (existingLike) {
-    const { error } = await supabase
+export const getUserLikedImages = async (userId: string): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
       .from('likes')
-      .delete()
+      .select('image_id')
+      .eq('user_id', userId)
+
+    if (error) throw error
+    return data.map(like => like.image_id)
+  } catch (error) {
+    console.error('Error fetching user likes:', error)
+    return []
+  }
+}
+
+export const toggleLike = async (
+  userId: string,
+  imageId: string
+): Promise<{ isLiked: boolean; newCount: number }> => {
+  try {
+    const { data: existingLike } = await supabase
+      .from('likes')
+      .select('id')
       .eq('user_id', userId)
       .eq('image_id', imageId)
+      .maybeSingle()
+
+    if (existingLike) {
+      const { error: deleteError } = await supabase
+        .from('likes')
+        .delete()
+        .eq('user_id', userId)
+        .eq('image_id', imageId)
+
+      if (deleteError) throw deleteError
+
+      const { data: image, error: imageError } = await supabase
+        .from('images')
+        .select('like_count')
+        .eq('id', imageId)
+        .single()
+
+      if (imageError) throw imageError
+
+      return {
+        isLiked: false,
+        newCount: image.like_count,
+      }
+    } else {
+      const { error: insertError } = await supabase
+        .from('likes')
+        .insert({
+          user_id: userId,
+          image_id: imageId,
+        })
+
+      if (insertError) throw insertError
+
+      const { data: image, error: imageError } = await supabase
+        .from('images')
+        .select('like_count')
+        .eq('id', imageId)
+        .single()
+
+      if (imageError) throw imageError
+
+      return {
+        isLiked: true,
+        newCount: image.like_count,
+      }
+    }
+  } catch (error) {
+    console.error('Error toggling like:', error)
+    throw error
+  }
+}
+
+export const getImagesWithLikeStatus = async (userId: string | null): Promise<any[]> => {
+  try {
+    const { data: images, error } = await supabase
+      .from('images')
+      .select(`
+        *,
+        profiles:user_id (
+          username
+        )
+      `)
+      .order('created_at', { ascending: false })
 
     if (error) throw error
-    return false
-  } else {
-    const { error } = await supabase
-      .from('likes')
-      .insert({
-        user_id: userId,
-        image_id: imageId,
-      })
 
-    if (error) throw error
-    return true
+    if (userId) {
+      const likedImageIds = await getUserLikedImages(userId)
+
+      return images.map(image => ({
+        ...image,
+        isLikedByUser: likedImageIds.includes(image.id),
+      }))
+    }
+
+    return images.map(image => ({
+      ...image,
+      isLikedByUser: false,
+    }))
+  } catch (error) {
+    console.error('Error fetching images with like status:', error)
+    return []
   }
 }
 

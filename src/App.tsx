@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Navbar } from './components/common/Navbar'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
+import { ToastContainer } from './components/common/ToastContainer'
 import { Home } from './pages/Home'
 import { Dashboard } from './pages/Dashboard'
 import { SignUpPage } from './pages/SignUpPage'
@@ -9,8 +10,9 @@ import { SignInPage } from './pages/SignInPage'
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-[var(--color-bg)]">
+      <div className="min-h-screen bg-[#0a0a0a]">
         <Navbar />
+        <ToastContainer />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/signup" element={<SignUpPage />} />

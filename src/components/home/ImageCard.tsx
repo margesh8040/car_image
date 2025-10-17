@@ -89,12 +89,12 @@ export const ImageCard = ({ image, isLiked, onLikeToggle, index }: ImageCardProp
           e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3)'
         }}
       >
-        <div className="relative aspect-[4/3] overflow-hidden bg-[var(--color-primary)]">
+        <div className="relative overflow-hidden bg-[var(--color-primary)]">
           <img
             src={image.storage_url}
             alt={image.image_name}
             loading="lazy"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700"
           />
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

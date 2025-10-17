@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Image } from '../../types'
 import { ImageCard } from './ImageCard'
 import { Car } from 'lucide-react'
@@ -9,6 +10,27 @@ interface ImageGridProps {
 }
 
 export const ImageGrid = ({ images, likedImages, onLikeToggle }: ImageGridProps) => {
+  const [columns, setColumns] = useState(4)
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth
+      if (width < 640) {
+        setColumns(1)
+      } else if (width < 1024) {
+        setColumns(2)
+      } else if (width < 1280) {
+        setColumns(3)
+      } else {
+        setColumns(4)
+      }
+    }
+
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   if (images.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
@@ -21,17 +43,34 @@ export const ImageGrid = ({ images, likedImages, onLikeToggle }: ImageGridProps)
     )
   }
 
+  const distributeImages = () => {
+    const cols: Image[][] = Array.from({ length: columns }, () => [])
+
+    images.forEach((image, index) => {
+      const columnIndex = index % columns
+      cols[columnIndex].push(image)
+    })
+
+    return cols
+  }
+
+  const columnData = distributeImages()
+
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {images.map((image, index) => (
-          <ImageCard
-            key={image.id}
-            image={image}
-            isLiked={likedImages.includes(image.id)}
-            onLikeToggle={onLikeToggle}
-            index={index}
-          />
+      <div className="flex gap-6">
+        {columnData.map((columnImages, columnIndex) => (
+          <div key={columnIndex} className="flex-1 flex flex-col gap-6">
+            {columnImages.map((image, imageIndex) => (
+              <ImageCard
+                key={image.id}
+                image={image}
+                isLiked={likedImages.includes(image.id)}
+                onLikeToggle={onLikeToggle}
+                index={columnIndex * Math.ceil(images.length / columns) + imageIndex}
+              />
+            ))}
+          </div>
         ))}
       </div>
     </div>
